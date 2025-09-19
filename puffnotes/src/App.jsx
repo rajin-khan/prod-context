@@ -1,9 +1,9 @@
 // src/App.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 
 // Component Imports
-import OfflineApp from './components/OfflineApp'; // We will create this from existing code
+import OfflineApp from './components/OfflineApp';
 import OnlineApp from './components/OnlineApp';
 import LandingPage from './components/LandingPage';
 import OnlineSetupModal from './components/OnlineSetupModal';
@@ -53,6 +53,12 @@ export default function App() {
   const handleStartOnline = async () => {
     setIsOnlineLoading(true);
     setShowSetupModal(true);
+     // Reset steps for a clean modal on each attempt
+    setSetupSteps([
+        { label: 'Authenticating...', status: 'loading' },
+        { label: 'Accessing Google Drive...', status: 'loading' },
+        { label: 'Finding puffnotes folder...', status: 'loading' },
+    ]);
     
     try {
       // Step 1: Sign in
@@ -111,6 +117,11 @@ export default function App() {
       }
   };
 
+  // --- NEW: Function to return to the landing page ---
+  const handleGoToLanding = () => {
+    setMode('landing');
+  };
+
   const renderContent = () => {
     switch (mode) {
       case 'online':
@@ -123,7 +134,8 @@ export default function App() {
           />
         ) : null;
       case 'offline':
-        return <OfflineApp />;
+        // --- UPDATED: Pass the new function as a prop ---
+        return <OfflineApp onGoToLanding={handleGoToLanding} />;
       case 'landing':
       default:
         return (
@@ -145,6 +157,3 @@ export default function App() {
     </>
   );
 }
-
-// NOTE: We need to create the OfflineApp component from the old App.jsx code.
-// This is the final step.

@@ -19,6 +19,7 @@ import {
   Eye,
   Pen,
   Keyboard,
+  Home, // <-- Import Home icon
 } from 'lucide-react';
 import { beautifyNoteWithGroq } from '../lib/groq';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -31,7 +32,8 @@ import KeyboardShortcutsModal from './KeyboardShortcutsModal';
 const USER_API_KEY_STORAGE_KEY = 'puffnotes_groqUserApiKey_v1';
 const DEFAULT_GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 
-export default function OfflineApp() {
+// --- UPDATED: Accept onGoToLanding as a prop ---
+export default function OfflineApp({ onGoToLanding }) {
   const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem(USER_API_KEY_STORAGE_KEY) || '');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
@@ -55,8 +57,6 @@ export default function OfflineApp() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
-
-  // --- BUG FIX: Add state to track the currently open file's real name ---
   const [activeFileName, setActiveFileName] = useState("");
 
   const {
@@ -65,7 +65,7 @@ export default function OfflineApp() {
     saveNote,
     listFiles,
     loadNote,
-    deleteNote, // <-- Import the new delete function
+    deleteNote,
   } = useFileSystemAccess();
 
   const refreshFileList = async () => { if (folderHandle) { try { const files = await listFiles(); setFileList(files || []); } catch (err) { console.error("Failed to refresh file list:", err); setFileList([]); } } };
@@ -78,7 +78,7 @@ export default function OfflineApp() {
         const baseName = filename.replace(/\.md$/, "");
         setNote(content); 
         setNoteName(baseName);
-        setActiveFileName(filename); // <-- BUG FIX: Track the real filename
+        setActiveFileName(filename);
         setIsFirstSave(false); 
         setShowFileModal(false);
         setPreviewNote(""); 
@@ -91,7 +91,7 @@ export default function OfflineApp() {
   const handleNewNote = () => {
     setNote(""); 
     setNoteName("untitled");
-    setActiveFileName(""); // <-- BUG FIX: Reset the active filename
+    setActiveFileName("");
     setIsFirstSave(true);
     setPreviewNote(""); 
     setShowBeautifyControls(false); 
@@ -109,7 +109,7 @@ export default function OfflineApp() {
       if (savedAs) { 
         const baseName = savedAs.replace(/\.md$/, ""); 
         setNoteName(baseName);
-        setActiveFileName(savedAs); // <-- BUG FIX: Update active filename on first save
+        setActiveFileName(savedAs);
         setIsFirstSave(false); 
         refreshFileList(); 
         setSaveIndicator(true); 
@@ -121,7 +121,6 @@ export default function OfflineApp() {
     catch (err) { console.error("Error saving file:", err); alert(`Failed to save note: ${filename}. Error: ${err.message}`); }
   };
   
-  // --- Functions below this line are unchanged ---
   const handleBeautify = async (isRegeneration = false) => {
     const noteToProcess = isRegeneration ? (originalNote || note) : note; if (!noteToProcess.trim()) return;
     const keyToUse = userApiKey || DEFAULT_GROQ_API_KEY; if (!keyToUse) { console.error("No Groq API Key available (User or Default)."); setApiKeyError(true); setApiKeySaveFeedback(''); setShowInfoModal(true); setShowApiKeyInput(true); setTimeout(() => apiKeyInputRef.current?.focus(), 100); return; }
@@ -300,9 +299,6 @@ export default function OfflineApp() {
     }
   };
 
-  // --- useEffect Hooks ---
-  
-  // BUG FIX: This useEffect now properly handles renaming.
   useEffect(() => {
     const autoSave = async () => {
       const shouldSave = !isFirstSave && folderHandle && noteName.trim() && !showBeautifyControls;
@@ -310,7 +306,6 @@ export default function OfflineApp() {
 
       const newFilename = noteName.endsWith(".md") ? noteName : `${noteName}.md`;
 
-      // Case 1: Simple content update (filename hasn't changed)
       if (newFilename === activeFileName) {
         try {
           await saveNote(activeFileName, note, false);
@@ -318,7 +313,6 @@ export default function OfflineApp() {
           console.warn("Autosave failed:", err);
         }
       }
-      // Case 2: Rename operation (filename has changed)
       else {
         try {
           const savedAs = await saveNote(newFilename, note, true);
@@ -337,9 +331,9 @@ export default function OfflineApp() {
       }
     };
 
-    const debounceTimeout = setTimeout(autoSave, 850); // Slightly longer delay for renames
+    const debounceTimeout = setTimeout(autoSave, 850);
     return () => clearTimeout(debounceTimeout);
-  }, [note, noteName]); // Simplified dependency array
+  }, [note, noteName]);
 
 
   useEffect(() => {
@@ -372,6 +366,11 @@ export default function OfflineApp() {
   return (
       <div className="min-h-screen bg-[#fdf6ec] relative overflow-hidden transition-opacity duration-500 opacity-100">
         <div className="absolute top-4 left-4 z-50 flex items-center space-x-2"> 
+          {/* --- ADD THIS BUTTON --- */}
+          <motion.button onClick={onGoToLanding} className="opacity-70 hover:opacity-90 transition p-1 rounded-full border border-gray-300 shadow-sm" title="Back to Home" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
+            <Home size={17} strokeWidth={2} className="text-gray-200" />
+          </motion.button>
+          
           <motion.button onClick={() => { setApiKeyError(false); setShowInfoModal(true); setShowApiKeyInput(!!userApiKey); setApiKeySaveFeedback(''); }} className="opacity-70 hover:opacity-90 transition p-1 rounded-full border border-gray-300 shadow-sm" title="About puffnotes" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}> <Info size={17} strokeWidth={2} className="text-gray-200" /> </motion.button> 
           <motion.button onClick={() => setShowShortcutsModal(true)} className="opacity-70 hover:opacity-90 transition p-1 rounded-full border border-gray-300 shadow-sm" title="Keyboard Shortcuts (Cmd+/)" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
             <Keyboard size={17} strokeWidth={2} className="text-gray-200" />
