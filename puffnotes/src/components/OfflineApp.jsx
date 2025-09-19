@@ -2,24 +2,9 @@
 import { useState, useEffect, useRef } from 'react';
 import useFileSystemAccess from '../hooks/useFileSystemAccess';
 import {
-  FilePlus,
-  FolderOpen,
-  ChevronDown,
-  ChevronUp,
-  X,
-  Wand2,
-  Save,
-  Check,
-  RotateCw,
-  XCircle,
-  CheckCircle,
-  Info,
-  KeyRound,
-  AlertTriangle,
-  Eye,
-  Pen,
-  Keyboard,
-  Home, // <-- Import Home icon
+  FilePlus, FolderOpen, ChevronDown, ChevronUp, X, Wand2, Save, Check,
+  RotateCw, XCircle, CheckCircle, Info, KeyRound, AlertTriangle,
+  Eye, Pen, Keyboard, Home,
 } from 'lucide-react';
 import { beautifyNoteWithGroq } from '../lib/groq';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -28,18 +13,62 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as ReactDOM from 'react-dom/client';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
+import OnboardingModal from './OnboardingModal'; // <-- IMPORT ONBOARDING
 
 const USER_API_KEY_STORAGE_KEY = 'puffnotes_groqUserApiKey_v1';
 const DEFAULT_GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 
-// --- UPDATED: Accept onGoToLanding as a prop ---
+// --- ONBOARDING STEPS FOR OFFLINE MODE ---
+const offlineOnboardingSteps = [
+  {
+    title: "Welcome to Your Editor",
+    description: "This is your creative space. Give your notes a name. Everything's saved automatically to your chosen folder.",
+    video: "/videos/1.mp4",
+  },
+  {
+    title: "AI-Powered Magic",
+    description: (
+      <>
+        Click the <Wand2 size={14} className="inline-block text-yellow-300 -mt-1" /> wand to magically transform your rough notes into polished, detailed documents.
+      </>
+    ),
+    video: "/videos/2.mp4",
+  },
+    {
+    title: "Preview Your Markdown",
+    description: "Use Markdown for formatting. Toggle the eye icon to see a clean, beautiful preview of your note.",
+    video: "/videos/3.mp4",
+  },
+  {
+    title: "Export to PDF",
+    description: "Need to share or print? You can instantly export your beautifully formatted notes as a PDF document.",
+    video: "/videos/4.mp4",
+  },
+  {
+    title: "Focus When You Need It",
+    description: "Hide the editor with the arrow button to enter a distraction-free focus mode or to simply admire the view.",
+    video: "/videos/5.mp4",
+  },
+  {
+    title: "Your Personal AI Key",
+    description: "The default AI key has limits. Add your own free Groq API key in the Info panel for unlimited, private use.",
+    video: "/videos/6.mp4",
+  },
+];
+
+
 export default function OfflineApp({ onGoToLanding }) {
+  // --- ONBOARDING STATE ---
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem('puffnotes_onboarding_offline_complete')
+  );
+
+  // --- All other existing state remains unchanged ---
   const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem(USER_API_KEY_STORAGE_KEY) || '');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
   const [apiKeySaveFeedback, setApiKeySaveFeedback] = useState('');
   const apiKeyInputRef = useRef(null);
-
   const [isEditorVisible, setIsEditorVisible] = useState(true);
   const [note, setNote] = useState("");
   const [noteName, setNoteName] = useState("untitled");
@@ -58,15 +87,16 @@ export default function OfflineApp({ onGoToLanding }) {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [activeFileName, setActiveFileName] = useState("");
-
+  
   const {
-    folderHandle,
-    pickFolder,
-    saveNote,
-    listFiles,
-    loadNote,
-    deleteNote,
+    folderHandle, pickFolder, saveNote,
+    listFiles, loadNote, deleteNote,
   } = useFileSystemAccess();
+
+  const handleFinishOnboarding = () => {
+    localStorage.setItem('puffnotes_onboarding_offline_complete', 'true');
+    setShowOnboarding(false);
+  };
 
   const refreshFileList = async () => { if (folderHandle) { try { const files = await listFiles(); setFileList(files || []); } catch (err) { console.error("Failed to refresh file list:", err); setFileList([]); } } };
   
@@ -365,6 +395,10 @@ export default function OfflineApp({ onGoToLanding }) {
 
   return (
       <div className="min-h-screen bg-[#fdf6ec] relative overflow-hidden transition-opacity duration-500 opacity-100">
+        <AnimatePresence>
+          {showOnboarding && <OnboardingModal steps={offlineOnboardingSteps} onFinish={handleFinishOnboarding} />}
+        </AnimatePresence>
+        <div className={`min-h-screen bg-[#fdf6ec] relative overflow-hidden transition-all duration-300 ${showOnboarding ? 'blur-sm scale-105' : 'blur-0 scale-100'}`}></div>
         <div className="absolute top-4 left-4 z-50 flex items-center space-x-2"> 
           {/* --- ADD THIS BUTTON --- */}
           <motion.button onClick={onGoToLanding} className="opacity-70 hover:opacity-90 transition p-1 rounded-full border border-gray-300 shadow-sm" title="Back to Home" whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>

@@ -1,24 +1,9 @@
 // src/components/OnlineApp.jsx
 import { useState, useEffect, useRef } from 'react';
 import {
-  FilePlus,
-  FolderOpen,
-  ChevronDown,
-  ChevronUp,
-  X,
-  Wand2,
-  Check,
-  RotateCw,
-  XCircle,
-  CheckCircle,
-  Info,
-  KeyRound,
-  Eye,
-  Pen,
-  Keyboard,
-  LogOut,
-  AlertTriangle,
-  Loader2,
+  FilePlus, FolderOpen, ChevronDown, ChevronUp, X, Wand2, Check,
+  RotateCw, XCircle, CheckCircle, Info, KeyRound, Eye, Pen,
+  Keyboard, LogOut, AlertTriangle, Loader2,
 } from 'lucide-react';
 import { beautifyNoteWithGroq } from '../lib/groq';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -27,21 +12,64 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import * as ReactDOM from 'react-dom/client';
 import KeyboardShortcutsModal from './KeyboardShortcutsModal';
+import OnboardingModal from './OnboardingModal'; // <-- IMPORT ONBOARDING
 import { signOut } from '../lib/firebase';
 import { listNotes, getNoteContent, saveNoteContent } from '../lib/googleDrive';
 
 const USER_API_KEY_STORAGE_KEY = 'puffnotes_groqUserApiKey_v1';
 const DEFAULT_GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY || '';
 
+// --- ONBOARDING STEPS FOR ONLINE MODE ---
+const onlineOnboardingSteps = [
+  {
+    title: "Welcome to Your Editor",
+    description: "This is your creative space. Give your notes a name. Everything's saved automatically in Google Drive.",
+    video: "/videos/1.mp4",
+  },
+  {
+    title: "AI-Powered Magic",
+    description: (
+      <>
+        Click the <Wand2 size={14} className="inline-block text-yellow-300 -mt-1" /> wand to magically transform your rough notes into polished, detailed documents.
+      </>
+    ),
+    video: "/videos/2.mp4",
+  },
+  {
+    title: "Preview Your Markdown",
+    description: "Use Markdown for formatting. Toggle the eye icon to see a clean, beautiful preview of your note.",
+    video: "/videos/3.mp4",
+  },
+  {
+    title: "Export to PDF",
+    description: "Need to share or print? You can instantly export your beautifully formatted notes as a PDF document.",
+    video: "/videos/4.mp4",
+  },
+  {
+    title: "Focus When You Need It",
+    description: "Hide the editor with the arrow button to enter a distraction-free focus mode or to simply admire the view.",
+    video: "/videos/5.mp4",
+  },
+  {
+    title: "Your Personal AI Key",
+    description: "The default AI key has limits. Add your own free Groq API key in the Info panel for unlimited, private use.",
+    video: "/videos/6.mp4",
+  },
+];
+
+
 export default function OnlineApp({ user, accessToken, folderId, onSignOut }) {
-  // --- State for API Key Management ---
+  // --- ONBOARDING STATE ---
+  const [showOnboarding, setShowOnboarding] = useState(
+    () => !localStorage.getItem('puffnotes_onboarding_online_complete')
+  );
+
+  // --- All other existing state remains unchanged ---
   const [userApiKey, setUserApiKey] = useState(() => localStorage.getItem(USER_API_KEY_STORAGE_KEY) || '');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [apiKeyError, setApiKeyError] = useState(false);
   const [apiKeySaveFeedback, setApiKeySaveFeedback] = useState('');
   const apiKeyInputRef = useRef(null);
-
-  // --- State for Online Mode ---
   const [isEditorVisible, setIsEditorVisible] = useState(true);
   const [note, setNote] = useState("");
   const [activeNoteId, setActiveNoteId] = useState(null);
@@ -52,7 +80,7 @@ export default function OnlineApp({ user, accessToken, folderId, onSignOut }) {
   const [showBeautifyControls, setShowBeautifyControls] = useState(false);
   const [originalNote, setOriginalNote] = useState("");
   const [isBeautifying, setIsBeautifying] = useState(false);
-  const [saveStatus, setSaveStatus] = useState('saved'); // 'unsaved', 'saving', 'saved'
+  const [saveStatus, setSaveStatus] = useState('saved');
   const [focusMode, setFocusMode] = useState(false);
   const [dropAnimationComplete, setDropAnimationComplete] = useState(true);
   const [showInfoModal, setShowInfoModal] = useState(false);
@@ -62,6 +90,11 @@ export default function OnlineApp({ user, accessToken, folderId, onSignOut }) {
   const [isLoadingNote, setIsLoadingNote] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const noteContentRef = useRef(note);
+  
+  const handleFinishOnboarding = () => {
+    localStorage.setItem('puffnotes_onboarding_online_complete', 'true');
+    setShowOnboarding(false);
+  };
 
   useEffect(() => {
     noteContentRef.current = note;
@@ -374,6 +407,10 @@ export default function OnlineApp({ user, accessToken, folderId, onSignOut }) {
 
   return (
     <>
+      <AnimatePresence>
+        {showOnboarding && <OnboardingModal steps={onlineOnboardingSteps} onFinish={handleFinishOnboarding} />}
+      </AnimatePresence>
+      <div className={`min-h-screen bg-[#fdf6ec] relative overflow-hidden transition-all duration-300 ${showOnboarding ? 'blur-sm scale-105' : 'blur-0 scale-100'}`}></div>
       <div className="min-h-screen bg-[#fdf6ec] relative overflow-hidden">
         {/* RESPONSIVE: Adjusted positioning for smaller screens */}
         <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-50 flex items-center space-x-2">
