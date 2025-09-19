@@ -2,7 +2,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Wifi } from 'lucide-react';
 
-export default function LandingPage({ onStart }) {
+export default function LandingPage({ onStartOffline, onStartOnline, isOnlineLoading }) {
   return (
     <AnimatePresence>
       <motion.div
@@ -59,7 +59,7 @@ export default function LandingPage({ onStart }) {
           {/* Action Buttons */}
           <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row">
             <motion.button
-              onClick={onStart}
+              onClick={onStartOffline}
               className="group flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-6 py-3 font-mono text-sm text-white/90 backdrop-blur-sm transition-all duration-300 hover:border-white/80 hover:bg-white/20"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -72,13 +72,14 @@ export default function LandingPage({ onStart }) {
             </motion.button>
 
             <motion.button
-              className="group flex cursor-not-allowed items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 py-3 font-mono text-sm text-white/50 backdrop-blur-sm transition-all duration-300"
-              title="Coming soon!"
+              onClick={onStartOnline}
+              disabled={isOnlineLoading}
+              className="group flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-6 py-3 font-mono text-sm text-white/90 backdrop-blur-sm transition-all duration-300 hover:border-white/80 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Online Mode
-              <Wifi size={16} className="opacity-50" />
+              {isOnlineLoading ? 'Connecting...' : 'Online Mode'}
+              <Wifi size={16} className={isOnlineLoading ? 'animate-pulse' : ''} />
             </motion.button>
           </div>
         </motion.div>
