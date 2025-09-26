@@ -1,17 +1,15 @@
 // src/components/LandingPage.jsx
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-// THE FIX: Add FileText to the import list
 import { Wifi, FolderLock, ArrowRight, ArrowLeft, Cloud, MonitorSmartphone, ShieldCheck, FileText } from 'lucide-react';
 
-// Animation variants for the content inside
+// Animation variants
 const itemVariants = {
   initial: { y: 20, opacity: 0 },
   animate: { y: 0, opacity: 1, transition: { ease: 'easeOut', duration: 0.5 } },
   exit: { y: -20, opacity: 0, transition: { ease: 'easeIn', duration: 0.3 } },
 };
 
-// Variants for the container to orchestrate the children's animation
 const containerVariants = {
   initial: { opacity: 0 },
   animate: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.2 } },
@@ -21,6 +19,18 @@ const containerVariants = {
 
 export default function LandingPage({ onStartOffline, onStartOnline, isOnlineLoading }) {
   const [showInfo, setShowInfo] = useState(false);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.warn("Video autoplay was prevented by the browser:", error);
+      });
+    }
+  }, []);
+
+  // --- NEW: Your simple, editable message ---
+  const devMessage = "- Themes coming soon! Drop suggestions";
 
   return (
     <motion.div
@@ -29,9 +39,17 @@ export default function LandingPage({ onStartOffline, onStartOnline, isOnlineLoa
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Background Video */}
-      <video autoPlay muted loop playsInline preload="auto" className="absolute top-0 left-0 h-full w-full object-cover">
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        className="absolute top-0 left-0 h-full w-full object-cover"
+      >
         <source src="/puff.webm" type="video/webm" />
+        <source src="/puff.mp4" type="video/mp4" />
       </video>
       <div className="absolute inset-0 h-full w-full bg-black/70"></div>
 
@@ -87,7 +105,10 @@ export default function LandingPage({ onStartOffline, onStartOnline, isOnlineLoa
                 </motion.button>
               </motion.div>
               <motion.div className="mt-8 w-full text-center" variants={itemVariants}>
-                <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[#F5F5DC]/50">Beta 0.2.0</p>
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-widest text-[#F5F5DC]/50">Stable 2.0.1</p>
+                <p className="mt-2 font-mono text-xs text-[#F5F5DC]/50 italic">
+                  {devMessage}{' '}<a href="https://github.com/rajin-khan/PuffNotes/discussions/1" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/70 transition-colors">here</a>.
+                </p>
                 <p className="mt-2 font-mono text-xs text-white/40">Created by{' '}<a href="https://rajinkhan.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/70 transition-colors">Rajin Khan</a></p>
               </motion.div>
             </motion.div>
